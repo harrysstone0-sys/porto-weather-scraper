@@ -9,10 +9,24 @@ final class Fetcher
     private const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36';
 
     /**
-     * Fetch a page the way a normal browser would.
-     * Returns the body or throws RuntimeException.
+     * Fetch with a short retry loop. IPMA sits behind a load balancer and
+     * occasionally answers 503 on the first hit; a pause usually clears it.
      */
-    public static function fetch(string $url): string
+    public static function fetch(string $url, int $retries = 3): string
+    {
+        $lastError = 'no attempt made';
+        for ($i = 0; $i < $retries; $i++) {
+            try {
+                return self::attempt($url);
+            } catch (RuntimeException $e) {
+                $lastError = $e->getMessage();
+                usleep(500_000 * ($i + 1));
+            }
+        }
+        throw new RuntimeException("fetch failed after {$retries} tries: {$lastError}");
+    }
+
+    private static function attempt(string $url): string
     {
         $ch = curl_init($url);
         curl_setopt_array($ch, [
