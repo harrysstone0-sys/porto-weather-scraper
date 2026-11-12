@@ -1,0 +1,5 @@
+{
+  "cities": ["porto", "lisboa", "braga"],
+  "csv": "weather.csv",
+  "cron": "15 9 * * *"
+}
